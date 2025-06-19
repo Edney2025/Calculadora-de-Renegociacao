@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Renegociação</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* --- Light Mode Colors --- */
+            --bg-color: #f8f9fa;
+            --container-bg: #ffffff;
+            --primary-color: #000000;
+            --secondary-color: #3949ab;
+            --text-color-primary: #212529;
+            --text-color-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --shadow-color: rgba(0, 0, 0, 0.07);
+            
+            /* Visor Light Mode Backgrounds */
+            --color-atrasadas-light-bg: #ffebee;
+            --color-vencer-light-bg: #e8f5e9;
+            --color-total-light-bg: #fff3e0;
+
+            /* Theme Colors */
+            --color-atrasadas: #d32f2f;
+            --color-vencer: #388e3c;
+            --color-total: #f57c00;
+            --success-color: #28a745;
+            --sky-blue-active: #87CEEB;
+        }
+
+        body.dark-mode {
+            /* --- Dark Mode Colors --- */
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --primary-color: #c7d2fe;
+            --secondary-color: #7986cb;
+            --text-color-primary: #e8eaf6;
+            --text-color-secondary: #b0bec5;
+            --border-color: #455a64;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-color-primary); transition: background-color 0.3s ease, color 0.3s ease; }
+
+        .fullscreen-container { width: 100vw; min-height: 100dvh; background-color: var(--container-bg); display: none; flex-direction: column; align-items: center; transition: background-color 0.3s ease; }
+        .fullscreen-container.active { display: flex; }
+
+        .content-wrapper { width: 100%; max-width: 650px; padding: 25px 25px 90px 25px; /* Padding bottom to avoid overlap with footer */ display: flex; flex-direction: column; flex-grow: 1; overflow-y: auto; }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--container-bg); padding: 15px 25px; box-shadow: 0 -5px 15px -5px var(--shadow-color); transition: background-color 0.3s ease; display: flex; justify-content: center; }
+        .footer-content { width: 100%; max-width: 600px; }
+        .hidden { display: none !important; }
+
+        /* Welcome & Login */
+        .centered-content { justify-content: center; text-align: center; }
+        .welcome-illustration { width: 70%; max-width: 280px; margin-bottom: 40px; color: var(--secondary-color); }
+        h1 { font-size: 2.2em; margin-bottom: 15px; color: var(--primary-color); }
+        p.subtitle { font-size: 1.1em; max-width: 400px; margin: 0 auto 40px auto; color: var(--text-color-secondary); }
+        .fade-out { animation: fadeOut 0.4s ease-out forwards; }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+
+        /* General UI */
+        h2 { font-size: 1.6em; margin-bottom: 20px; text-align: left; font-weight: 700; color: var(--primary-color); }
+        h4 { text-align: left; margin: 0; font-size: 1.2em; font-weight: 600; color: var(--text-color-primary); }
+        .header-controls { display: flex; justify-content: flex-end; align-items: center; width: 100%; margin-bottom: 20px; gap: 15px; }
+        #logout-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-color-secondary); padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.9em; transition: all 0.2s; }
+        #cpf-input { width: 100%; padding: 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1em; background-color: var(--bg-color); color: var(--text-color-primary); }
+        .main-btn { width: 100%; padding: 15px; font-size: 1.1em; font-weight: bold; color: #fff; background: linear-gradient(45deg, var(--secondary-color), #2c3ea1); border: none; border-radius: 8px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .main-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 15px var(--shadow-color); }
+        .main-btn:disabled { background: var(--border-color); color: var(--text-color-secondary); cursor: not-allowed; }
+        #error-message { color: var(--color-atrasadas); font-weight: bold; margin-top: 15px; text-align: center; }
+        
+        /* Visores & Abas */
+        .debt-visors-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 25px 0; }
+        .visor { padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px var(--shadow-color); }
+        .visor-title { font-size: 0.9em; margin: 0 0 5px 0; opacity: 0.9; }
+        .visor-value { font-size: 1.5em; font-weight: 700; margin: 0; }
+        body:not(.dark-mode) .visor { color: var(--text-color-primary); }
+        body:not(.dark-mode) .visor.atrasadas { background: var(--color-atrasadas-light-bg); }
+        body:not(.dark-mode) .visor.vencer { background: var(--color-vencer-light-bg); }
+        body:not(.dark-mode) .visor.total { background: var(--color-total-light-bg); }
+        body.dark-mode .visor { color: #fff; }
+        body.dark-mode .visor.atrasadas { background: linear-gradient(45deg, #c62828, #e53935); }
+        body.dark-mode .visor.vencer { background: linear-gradient(45deg, #2e7d32, #43a047); }
+        body.dark-mode .visor.total { background: linear-gradient(45deg, #ef6c00, #fb8c00); }
+        .proposal-tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 25px; }
+        .tab { flex: 1; padding: 14px 10px; text-align: center; cursor: pointer; border: none; border-bottom: 3px solid transparent; font-size: 1em; font-weight: 600; color: var(--text-color-secondary); transition: all 0.3s ease; }
+        .tab.disabled { opacity: 0.4; cursor: not-allowed; color: var(--text-color-secondary) !important; border-bottom-color: transparent !important; }
+        .tab.active.theme-atrasadas, .tab.active.theme-vencer, .tab.active.theme-total { font-weight: 700; }
+        .tab.active.theme-atrasadas { border-bottom-color: var(--color-atrasadas); color: var(--color-atrasadas); }
+        .tab.active.theme-vencer { border-bottom-color: var(--color-vencer); color: var(--color-vencer); }
+        .tab.active.theme-total { border-bottom-color: var(--color-total); color: var(--color-total); }
+
+        /* Calculadora & Contrato */
+        #special-notice-display { background-color: var(--color-total); color: #fff; padding: 15px; border-radius: 8px; text-align: left; margin-bottom: 20px; font-weight: 500; line-height: 1.5;}
+        .negotiation-block { border: 1px solid var(--border-color); padding: 20px 25px; border-radius: 12px; margin-bottom: 20px;}
+        .parcela-info { font-size: 1.2em; font-weight: 700; text-align: center; margin-top: 10px; transition: color 0.3s ease; }
+        .parcela-info span { color: var(--text-color-primary); font-weight: 500; }
+        .theme-atrasadas .parcela-info { color: var(--color-atrasadas); }
+        .theme-vencer .parcela-info { color: var(--color-vencer); }
+        .theme-total .parcela-info { color: var(--color-total); }
+        p.select-description { text-align: left; font-size: 0.85em; margin-top: 8px; color: var(--text-color-secondary); padding: 0 5px; }
+        select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color-primary); font-size: 1em; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right .75rem center; background-size: 16px 12px; }
+        body.dark-mode select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23b0bec5' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); }
+        body.dark-mode select:focus { border-color: var(--sky-blue-active); }
+        
+        #contract-text, #whatsapp-preview-text, .summary-block { background-color: var(--bg-color); padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; text-align: left; color: var(--text-color-primary); }
+        #contract-text, #whatsapp-preview-text { white-space: pre-wrap; word-wrap: break-word; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; max-height: 60vh; overflow-y: auto; }
+        .summary-block { margin-top: 20px; }
+        .summary-block p { font-size: 1.1em; text-align: left; margin-bottom: 10px; }
+        .summary-block p strong { color: var(--text-color-primary); }
+        .contract-actions { display: flex; flex-direction: column; gap: 10px; }
+        .action-btn { flex: 1; padding: 12px; font-size: 1em; font-weight: bold; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .action-btn.primary { background-color: var(--secondary-color); }
+        .action-btn.secondary { background-color: var(--text-color-secondary); }
+    </style>
+</head>
+<body>
+
+    <div id="welcome-section" class="fullscreen-container active">
+        <div class="content-wrapper centered-content">
+            <svg class="welcome-illustration" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 22H15C19.4183 22 21 20 21 16V8C21 4 19.4183 2 15 2H9C4.58172 2 3 4 3 8V16C3 20 4.58172 22 9 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <h1>Recomece.</h1>
+            <p class="subtitle">Encontre um caminho para organizar suas finanças. Estamos aqui para ajudar você a encontrar a melhor solução.</p>
+        </div>
+        <div class="footer"><div class="footer-content"><button id="start-btn" class="main-btn">Ver Minhas Opções</button></div></div>
+    </div>
+
+    <div id="login-section" class="fullscreen-container">
+        <div class="content-wrapper centered-content">
+            <h2>Acesse sua Proposta</h2>
+            <p style="text-align: left; margin-bottom: 20px;">Por favor, informe seu CPF para visualizar as condições que preparamos para você.</p>
+            <div class="form-group"><input type="text" id="cpf-input" placeholder="___.___.___-__" maxlength="14"></div>
+            <p id="error-message" class="hidden">CPF não encontrado.</p>
+        </div>
+        <div class="footer"><div class="footer-content"><button id="login-btn" class="main-btn">Acessar</button></div></div>
+    </div>
+    
+    <div id="dashboard-section" class="fullscreen-container">
+        <div class="content-wrapper">
+            <div class="header-controls">
+                <div class="theme-switch-wrapper"><label class="theme-switch" for="theme-checkbox"><input type="checkbox" id="theme-checkbox" /><div class="slider"></div></label></div>
+                <button id="logout-btn">Sair</button>
+            </div>
+            <h2 id="welcome-message"></h2>
+            <div class="debt-visors-container">
+                <div class="visor atrasadas"><p class="visor-title">Dívidas Atrasadas</p><p class="visor-value" id="divida-atrasada"></p></div>
+                <div class="visor vencer"><p class="visor-title">Dívidas a Vencer</p><p class="visor-value" id="divida-vencer"></p></div>
+                <div class="visor total"><p class="visor-title">Dívida Total</p><p class="visor-value" id="divida-total"></p></div>
+            </div>
+            <div id="proposal-tabs-container"></div>
+            <div id="special-notice-display" class="hidden"></div>
+            <div id="calculator-core" class="hidden">
+                <div id="entry-block" class="negotiation-block">
+                    <h4>Parcele sua ENTRADA</h4>
+                    <p class="parcela-info"><span id="entrada-parcelas-display">1x</span> de <strong id="entrada-valor-parcela">R$ 0,00</strong></p>
+                    <select id="entrada-parcelas-select"></select>
+                    <p class="select-description">Escolha em quantas vezes pagar o valor de entrada.</p>
+                </div>
+                <div class="negotiation-block">
+                    <h4>Parcele o SALDO RESTANTE</h4>
+                    <p class="parcela-info"><span id="saldo-parcelas-display">1x</span> de <strong id="saldo-valor-parcela">R$ 0,00</strong></p>
+                    <select id="saldo-parcelas-select"></select>
+                    <p class="select-description">Escolha o número de parcelas para o valor restante.</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer"><div class="footer-content"><button id="generate-summary-btn" class="main-btn">Ver Resumo da Proposta</button></div></div>
+    </div>
+
+    <div id="summary-section" class="fullscreen-container">
+        <div class="content-wrapper">
+            <h2>Resumo da Proposta</h2>
+            <p style="text-align: left;">Confira as condições escolhidas. Se estiver tudo certo, avance para ler o contrato.</p>
+            <div id="summary-details" class="summary-block"></div>
+        </div>
+        <div class="footer"><div class="footer-content"><div class="contract-actions">
+            <button id="continue-to-contract-btn" class="action-btn primary">Ler o Contrato</button>
+            <button id="back-to-calculator-btn" class="action-btn secondary">Voltar e Editar</button>
+        </div></div></div>
+    </div>
+
+    <div id="contract-section" class="fullscreen-container">
+        <div class="content-wrapper">
+            <h2>Termos do Acordo</h2><p style="text-align: left;">Para prosseguir, por favor, leia o contrato até o final.</p>
+            <pre id="contract-text"></pre>
+        </div>
+        <div class="footer"><div class="footer-content">
+            <button id="continue-to-preview-btn" class="main-btn" disabled>Li e Aceito, Finalizar</button>
+        </div></div>
+    </div>
+
+    <div id="preview-section" class="fullscreen-container">
+        <div class="content-wrapper">
+            <h2>Quase lá!</h2><p style="text-align: left;">Esta é a mensagem que será enviada para formalizar seu acordo. Confira uma última vez.</p>
+            <pre id="whatsapp-preview-text"></pre>
+        </div>
+        <div class="footer"><div class="footer-content"><div class="contract-actions">
+            <button id="share-whatsapp-btn" class="action-btn primary">Compartilhar e Finalizar</button>
+            <button id="back-to-contract-btn" class="action-btn secondary">Voltar ao Contrato</button>
+        </div></div></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const installmentOptions = {
+                entradaAtrasadas: [3, 6, 9, 12, 15, 18],
+                saldoPadrao: [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48],
+                entradaTotal: [3, 6, 9, 12, 15, 18, 21, 24],
+                alexsandraSaldo: Array.from({ length: 32 }, (_, i) => (i + 1) * 3) // 3, 6, ..., 96
+            };
+
+            const clientesDB = {};
+            const baseClients = [
+                { cpf: "09734255983", nome: "Amanda Lopes Inocêncio", dividas: { atrasadas: 3135.92, aVencer: 5118.43, total: 8255.35 } },
+                { cpf: "11191931927", nome: "Maicon Pereira Pontes", dividas: { atrasadas: 1852.00, aVencer: 8115.00, total: 9967.00 } },
+                { cpf: "09416499978", nome: "Jaqueline Rodrigues Lisboa", dividas: { atrasadas: 3824.21, aVencer: 460.00, total: 4284.21 } },
+                { cpf: "07308539938", nome: "Jordan Ribeiro", dividas: { atrasadas: 1740.00, aVencer: 740.00, total: 2480.00 } },
+                { cpf: "07896475910", nome: "Isla Miranda de Andrade", dividas: { atrasadas: 809.57, aVencer: 0, total: 809.57 } },
+                { cpf: "11122233344", nome: "Rosangela dos Santos", dividas: { atrasadas: 1650.00, aVencer: 0.00, total: 1650.00 } },
+                // 6 Fictitious Clients
+                { cpf: "10110110111", nome: "Cliente Fictício Um", dividas: { atrasadas: 1500.00, aVencer: 2500.00, total: 4000.00 } },
+                { cpf: "20220220222", nome: "Cliente Fictício Dois", dividas: { atrasadas: 800.00, aVencer: 1200.00, total: 2000.00 } },
+                { cpf: "30330330333", nome: "Cliente Fictício Três", dividas: { atrasadas: 3200.00, aVencer: 0.00, total: 3200.00 } },
+                { cpf: "40440440444", nome: "Cliente Fictício Quatro", dividas: { atrasadas: 500.00, aVencer: 5000.00, total: 5500.00 } },
+                { cpf: "50550550555", nome: "Cliente Fictício Cinco", dividas: { atrasadas: 10000.00, aVencer: 10000.00, total: 20000.00 } },
+                { cpf: "60660660666", nome: "Cliente Fictício Seis", dividas: { atrasadas: 2200.00, aVencer: 1100.00, total: 3300.00 } }
+            ];
+            
+            function createStandardProposals(dividas) {
+                const entradaAtrasadas = dividas.atrasadas * 0.20;
+                const entradaTotal = dividas.total * 0.20;
+                return [
+                    { id: 'atrasadas', descricao: "Atrasadas", entrada: { valorTotal: entradaAtrasadas, options: installmentOptions.entradaAtrasadas }, saldo: { valorTotal: dividas.atrasadas - entradaAtrasadas, juros_am: 0.004, options: installmentOptions.saldoPadrao } },
+                    { id: 'vencer', descricao: "A Vencer", disabled: true },
+                    { id: 'total', descricao: "Total", entrada: { valorTotal: entradaTotal, options: installmentOptions.entradaTotal }, saldo: { valorTotal: dividas.total - entradaTotal, juros_am: 0.006, options: installmentOptions.saldoPadrao } }
+                ];
+            }
+
+            baseClients.forEach(client => { clientesDB[client.cpf] = { ...client, propostas: createStandardProposals(client.dividas) }; });
+
+            const specialNotice = "BENEFÍCIO ESPECIAL: Com as parcelas do seu acordo em dia, você pode quitar parcelas do final pela METADE do preço! Exemplo: se uma parcela futura é de R$100, você paga apenas R$50. Se você pagar R$200 a mais em um mês, poderá quitar 4 parcelas de R$100 do final do seu contrato.";
+            clientesDB["07903312928"] = { nome: "Alexsandra Inossêncio", dividas: { atrasadas: 3341.76, aVencer: 2947.92, total: 6289.68 }, propostas: [ ...createStandardProposals({ atrasadas: 3341.76, aVencer: 2947.92, total: 6289.68 }).slice(0, 2), { id: 'total', descricao: "Total", hide_entry: true, saldo: { valorTotal: 6289.68, juros_am: 0.005, options: installmentOptions.alexsandraSaldo }, special_notice: specialNotice }] };
+            clientesDB["00221734988"] = { nome: "Angel Antonio Chaparro Gonzales", dividas: { atrasadas: 1200.00, aVencer: 11040.00, total: 12240.00 }, propostas: [ ...createStandardProposals({ atrasadas: 1200.00, aVencer: 11040.00, total: 12240.00 }).slice(0, 2), { id: 'total', descricao: "Total", hide_entry: true, saldo: { valorTotal: 12240.00, juros_am: 0, options: Array.from({ length: 40 }, (_, i) => (i + 1) * 3) }, special_notice: specialNotice }] };
+            
+            const el = {
+                welcome: document.getElementById('welcome-section'), login: document.getElementById('login-section'), dashboard: document.getElementById('dashboard-section'), summary: document.getElementById('summary-section'), contract: document.getElementById('contract-section'), preview: document.getElementById('preview-section'),
+                startBtn: document.getElementById('start-btn'), cpfInput: document.getElementById('cpf-input'), loginBtn: document.getElementById('login-btn'), logoutBtn: document.getElementById('logout-btn'),
+                genSummaryBtn: document.getElementById('generate-summary-btn'), toContractBtn: document.getElementById('continue-to-contract-btn'), toPreviewBtn: document.getElementById('continue-to-preview-btn'),
+                shareBtn: document.getElementById('share-whatsapp-btn'), backToCalcBtn: document.getElementById('back-to-calculator-btn'), backToContractBtn: document.getElementById('back-to-contract-btn'),
+                errorMsg: document.getElementById('error-message'), welcomeMsg: document.getElementById('welcome-message'),
+                dividaAtrasada: document.getElementById('divida-atrasada'), dividaVencer: document.getElementById('divida-vencer'), dividaTotal: document.getElementById('divida-total'),
+                tabsContainer: document.getElementById('proposal-tabs-container'), noticeDisplay: document.getElementById('special-notice-display'),
+                calculator: document.getElementById('calculator-core'), entryBlock: document.getElementById('entry-block'), entradaSelect: document.getElementById('entrada-parcelas-select'), entradaDisplay: document.getElementById('entrada-parcelas-display'), entradaValor: document.getElementById('entrada-valor-parcela'),
+                saldoSelect: document.getElementById('saldo-parcelas-select'), saldoDisplay: document.getElementById('saldo-parcelas-display'), saldoValor: document.getElementById('saldo-valor-parcela'),
+                summaryDetails: document.getElementById('summary-details'), contractText: document.getElementById('contract-text'), previewText: document.getElementById('whatsapp-preview-text'), themeToggle: document.getElementById('theme-checkbox')
+            };
+
+            let cliente = null, proposta = null, valores = {};
+            function formatCurrency(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+            function calcPrice(t, n, v) { return t === 0 ? v / n : (v * t * Math.pow(1 + t, n)) / (Math.pow(1 + t, n) - 1); }
+
+            function updateCalc() {
+                if (!proposta) return;
+                const hideEntry = proposta.hide_entry || false;
+                const nE = hideEntry ? 1 : parseInt(el.entradaSelect.value);
+                const vE = hideEntry ? 0 : proposta.entrada.valorTotal / nE;
+                const nS = parseInt(el.saldoSelect.value);
+                const vS = calcPrice(proposta.saldo.juros_am, nS, proposta.saldo.valorTotal);
+                if (!hideEntry) { el.entradaDisplay.textContent = `${nE}x`; el.entradaValor.textContent = formatCurrency(vE); }
+                el.saldoDisplay.textContent = `${nS}x`; el.saldoValor.textContent = formatCurrency(vS);
+                valores = { nE, vE, nS, vS };
+            }
+            
+            function populateSelect(selectElement, options) {
+                selectElement.innerHTML = '';
+                if (options && options.length > 0) {
+                    options.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt;
+                        option.textContent = `${opt}x`;
+                        selectElement.appendChild(option);
+                    });
+                }
+            }
+
+            function loadProposal(p) {
+                proposta = p;
+                const theme = `theme-${p.id}`;
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active', 'theme-atrasadas', 'theme-vencer', 'theme-total'));
+                const activeTab = document.querySelector(`.tab[data-id="${p.id}"]`);
+                if (activeTab) activeTab.classList.add('active', theme);
+                el.calculator.className = theme;
+                el.entryBlock.style.display = p.hide_entry ? 'none' : 'block';
+                el.noticeDisplay.classList.toggle('hidden', !p.special_notice);
+                if (p.special_notice) el.noticeDisplay.textContent = p.special_notice;
+                if (p.entrada) { populateSelect(el.entradaSelect, p.entrada.options); }
+                if (p.saldo) { populateSelect(el.saldoSelect, p.saldo.options); }
+                el.calculator.style.opacity = 0;
+                setTimeout(() => { el.calculator.classList.remove('hidden'); updateCalc(); el.calculator.style.opacity = 1; }, 100);
+            }
+
+            function showScreen(screen) {
+                document.querySelectorAll('.fullscreen-container').forEach(c => c.classList.remove('active'));
+                const screenElement = document.getElementById(screen + '-section');
+                if (screenElement) screenElement.classList.add('active');
+            }
+
+            function generateSummary() {
+                updateCalc();
+                const { nE, vE, nS, vS } = valores;
+                let summaryHTML = '';
+                if (!proposta.hide_entry) { summaryHTML += `<p><strong>Entrada:</strong> ${nE}x de ${formatCurrency(vE)}</p>`; }
+                summaryHTML += `<p><strong>Saldo Restante:</strong> ${nS}x de ${formatCurrency(vS)}</p>`;
+                el.summaryDetails.innerHTML = summaryHTML;
+                showScreen('summary');
+            }
+
+            function generateContract() {
+                const { nE, vE, nS, vS } = valores;
+                el.contractText.textContent = `INSTRUMENTO PARTICULAR DE CONFISSÃO, NOVAÇÃO DE DÍVIDA E OUTRAS AVENÇAS\n\nCREDOR: Edney Cunha da Silva, CPF 065.932.739-29, doravante denominado CREDOR.\nDEVEDOR: ${cliente.nome}, CPF ${cliente.dividas.cpfFormatado}, doravante denominado(a) DEVEDOR(A).\n\nCLÁUSULA 1ª - DO OBJETO: Pelo presente instrumento, o(a) DEVEDOR(A) reconhece e confessa uma dívida líquida, certa e exigível no valor de ${formatCurrency(cliente.dividas.total)} para com o CREDOR.\n\nCLÁUSULA 2ª - DA NOVAÇÃO E DO PAGAMENTO: Com o intuito de extinguir a obrigação anterior, as partes ajustam uma nova forma de pagamento (novação), nos seguintes termos:\n${!proposta.hide_entry ? `2.1. ENTRADA: ${nE}x de ${formatCurrency(vE)}.\n` : ''}2.2. SALDO: ${nS}x de ${formatCurrency(vS)} (Juros de ${(proposta.saldo.juros_am * 100).toFixed(4)}% a.m.).\n\nCLÁUSULA 3ª - DO INADIMPLEMENTO: O atraso no pagamento de qualquer parcela por mais de 5 (cinco) dias implicará no vencimento antecipado de todo o saldo devedor, sobre o qual incidirá multa de 10% (dez por cento), juros moratórios de 1% (um por cento) ao mês e correção monetária pelo IGPM/FGV.\n\nCLÁUSULA 4ª - DA PROTEÇÃO DE DADOS (LGPD): O(A) DEVEDOR(A) autoriza o CREDOR a coletar, tratar e compartilhar seus dados pessoais com terceiros, exclusivamente para a finalidade de gestão de crédito e cobrança, nos termos da Lei nº 13.709/2018.\n\nCLÁUSULA 5ª - DO FORO: Fica eleito o foro da comarca de Palotina, PR, para dirimir quaisquer litígios oriundos deste contrato.\n\nE, por estarem justos e contratados, firmam o presente. Palotina/PR, ${new Date().toLocaleDateString('pt-BR')}.\n\n_________________________\n${cliente.nome} (DEVEDOR(A))`;
+                el.contractText.scrollTop = 0;
+                el.toPreviewBtn.disabled = true;
+                showScreen('contract');
+            }
+
+            function formatCPF(input) {
+                let v = input.value.replace(/\D/g, '').substring(0, 11);
+                if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+                else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
+                else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+                input.value = v;
+            }
+
+            function setTheme(theme) {
+                localStorage.setItem('theme', theme);
+                document.body.className = theme === 'dark' ? 'dark-mode' : '';
+                el.themeToggle.checked = theme === 'dark';
+            }
+
+            el.startBtn.addEventListener('click', () => { el.welcome.classList.add('fade-out'); setTimeout(() => showScreen('login'), 400); });
+            el.cpfInput.addEventListener('input', () => formatCPF(el.cpfInput));
+            el.loginBtn.addEventListener('click', () => {
+                const cpf = el.cpfInput.value.replace(/[.\-]/g, '');
+                cliente = clientesDB[cpf];
+                if (cliente) {
+                    cliente.dividas.cpfFormatado = el.cpfInput.value;
+                    showScreen('dashboard');
+                    el.errorMsg.classList.add('hidden');
+                    el.welcomeMsg.textContent = `Olá, ${cliente.nome.split(' ')[0]}! Vamos encontrar o melhor caminho.`;
+                    el.dividaAtrasada.textContent = formatCurrency(cliente.dividas.atrasadas);
+                    el.dividaVencer.textContent = formatCurrency(cliente.dividas.aVencer);
+                    el.dividaTotal.textContent = formatCurrency(cliente.dividas.total);
+                    el.tabsContainer.innerHTML = '';
+                    const tabsDiv = document.createElement('div');
+                    tabsDiv.className = 'proposal-tabs';
+                    cliente.propostas.forEach(p => {
+                        const tab = document.createElement('div');
+                        tab.className = 'tab'; tab.textContent = p.descricao; tab.dataset.id = p.id;
+                        if (p.disabled || p.entrada?.valorTotal <= 0) { tab.classList.add('disabled'); } else { tab.onclick = () => loadProposal(p); }
+                        tabsDiv.appendChild(tab);
+                    });
+                    el.tabsContainer.appendChild(tabsDiv);
+                    const firstActive = cliente.propostas.find(p => !p.disabled && p.entrada?.valorTotal > 0);
+                    if (firstActive) { loadProposal(firstActive); } else { el.calculator.classList.add('hidden'); }
+                } else { el.errorMsg.classList.remove('hidden'); }
+            });
+            el.logoutBtn.addEventListener('click', () => { cliente = null; proposta = null; el.cpfInput.value = ''; showScreen('welcome'); el.welcome.classList.remove('fade-out'); });
+            el.entradaSelect.addEventListener('change', updateCalc);
+            el.saldoSelect.addEventListener('change', updateCalc);
+            el.genSummaryBtn.addEventListener('click', generateSummary);
+            el.toContractBtn.addEventListener('click', generateContract);
+            el.contractText.addEventListener('scroll', () => { if (el.contractText.scrollTop + el.contractText.clientHeight >= el.contractText.scrollHeight - 10) { el.toPreviewBtn.disabled = false; } });
+            el.toPreviewBtn.addEventListener('click', () => {
+                const { nE, vE, nS, vS } = valores;
+                el.previewText.textContent = `*RESUMO DO ACORDO*\n\n*Cliente:* ${cliente.nome}\n*CPF:* ${cliente.dividas.cpfFormatado}\n\n*CONDIÇÕES ACEITAS:*\n${!proposta.hide_entry ? `- Entrada: ${nE}x de ${formatCurrency(vE)}\n` : ''}- Saldo: ${nS}x de ${formatCurrency(vS)}\n\nAcordo gerado e aceito via portal em ${new Date().toLocaleString('pt-BR')}.`;
+                showScreen('preview');
+            });
+            el.shareBtn.addEventListener('click', () => window.open(`https://wa.me/5544998408460?text=${encodeURIComponent(el.previewText.textContent.trim())}`, '_blank'));
+            el.backToCalcBtn.addEventListener('click', () => showScreen('dashboard'));
+            el.backToContractBtn.addEventListener('click', () => showScreen('contract'));
+            el.themeToggle.addEventListener('change', (e) => setTheme(e.target.checked ? 'dark' : 'light'));
+
+            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            setTheme(savedTheme);
+        });
+    </script>
+</body>
+</html>
